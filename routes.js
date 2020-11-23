@@ -1,22 +1,31 @@
 module.exports = (app) => {
     const request = require('request');
+    let date = new Date(), 
+        param = '', 
+        json = {}, 
+        time = `${date.getHours()}:${date.getMinutes()}:${date.getMilliseconds()}+00:00`;
 
     app.get('/', (req, res)=>{
-        //parametros da url
-        // req.query.date
-        let time = Date.now()
-        // console.log(time) 
-        //busca informações na api da rpc
-        request(`https://epg-api.video.globo.com/programmes/1337/?2020-11-19`, (error, response, body)=>{
-            let json = JSON.parse(body)
 
-            json.programme.entries.current_time = time
+        request(`https://epg-api.video.globo.com/programmes/1337`, (error, response, body)=>{
 
-            console.log( json.programme.entries)
+            json = JSON.parse(body);
+            json.programme.entries.current_time = time;
 
             res.marko(require('./src/view/programmes.marko'), json.programme)
-            // res.send( json.programme.entries.reduce((prev, curr) =>`${prev}<div>${curr.title}</div>`, `<div></div>`) )
-        })
+        });
+    });
 
+    app.post('/', (req, res)=>{
+
+        param = req.body.date != '' ? `/?date=${req.body.date}` : '';
+
+        request(`https://epg-api.video.globo.com/programmes/1337${param}`, (error, response, body)=>{
+
+            json = JSON.parse(body)
+            if(param == '') json.programme.entries.current_time = time
+
+            res.marko(require('./src/view/programmes.marko'), json.programme)
+        });
     });
 }
